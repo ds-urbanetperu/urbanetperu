@@ -71,7 +71,11 @@ function Login() {
               />
             </div>
 
-            <button type="button" className="login-submit">
+            <button
+              type="button"
+              className="login-submit"
+              onClick={() => navigate("/inicio")}
+            >
               Ingresar al Sistema
             </button>
 

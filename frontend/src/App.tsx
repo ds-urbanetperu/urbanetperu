@@ -5,18 +5,24 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ForgotPasswordSent from "./pages/ForgotPasswordSent";
 import ResetPassword from "./pages/ResetPassword";
 import ResetPasswordSuccess from "./pages/ResetPasswordSuccess";
+import CitizenHome from "./pages/CitizenHome";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
+
         <Route path="/login" element={<Login />} />
         <Route path="/registro" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/forgot-password/sent" element={<ForgotPasswordSent />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/reset-password/success" element={<ResetPasswordSuccess />} />
+
+        <Route path="/inicio" element={<CitizenHome />} />
+
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );
