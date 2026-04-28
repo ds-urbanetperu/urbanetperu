@@ -1,7 +1,9 @@
 import { assets } from "../config/assets";
 import ImageSlot from "../components/common/ImageSlot";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
+  const navigate = useNavigate();
   return (
     <main className="login-page">
       <section
@@ -73,7 +75,11 @@ function Login() {
               Ingresar al Sistema
             </button>
 
-            <button type="button" className="login-link">
+            <button
+              type="button"
+              className="login-link"
+              onClick={() => navigate("/forgot-password")}
+            >
               ¿Olvidaste tu contraseña?
             </button>
 
@@ -85,7 +91,10 @@ function Login() {
 
             <p className="register-text">
               ¿No tienes cuenta?{" "}
-              <button type="button">
+              <button
+                type="button"
+                onClick={() => navigate("/registro")}
+              >
                 Crea una nueva aquí
               </button>
             </p>
