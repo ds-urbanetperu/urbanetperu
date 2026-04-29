@@ -107,6 +107,14 @@ function Confirmation() {
 
           <button
             type="button"
+            className="secondary-action"
+            onClick={() => navigate("/mis-reportes")}
+          >
+            Ver historial
+          </button>
+
+          <button
+            type="button"
             className="primary-action"
             onClick={() => navigate("/reportar-baches")}
           >

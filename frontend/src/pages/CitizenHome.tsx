@@ -139,9 +139,7 @@ function CitizenHome() {
         <div className="citizen-history-link">
           <button
             type="button"
-            onClick={() =>
-              showMessage("La pantalla de historial será implementada en un siguiente ticket.")
-            }
+            onClick={() => navigate("/mis-reportes")}
           >
             Revisar historial de mis reportes
           </button>
