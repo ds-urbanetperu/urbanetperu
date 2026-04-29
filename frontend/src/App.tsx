@@ -9,6 +9,7 @@ import CitizenHome from "./pages/CitizenHome";
 import ReportPothole from "./pages/ReportPothole";
 import Processing from "./pages/Processing";
 import Confirmation from "./pages/Confirmation";
+import MyReports from "./pages/MyReports";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/reportar-baches" element={<ReportPothole />} />
         <Route path="/procesando" element={<Processing />} />
         <Route path="/confirmacion" element={<Confirmation />} />
+        <Route path="/mis-reportes" element={<MyReports />} />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
