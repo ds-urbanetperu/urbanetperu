@@ -15,7 +15,7 @@ function CitizenHome() {
 
   const handleReportClick = (type: ReportType) => {
     if (type.active) {
-      showMessage("El formulario de reporte de baches se implementará en el siguiente módulo.");
+      navigate("/reportar-baches");
       return;
     }
 
