@@ -3,14 +3,22 @@ import { useNavigate } from "react-router-dom";
 import { assets } from "../config/assets";
 import { REPORT_TYPES, type ReportType } from "../data/reportTypes";
 import ImageSlot from "../components/common/ImageSlot";
+import { clearSession, getSessionUser } from "../utils/authStorage";
 
 function CitizenHome() {
   const navigate = useNavigate();
   const [toast, setToast] = useState("");
+  const sessionUser = getSessionUser();
+  const userName = sessionUser?.name || "Usuario";
 
   const showMessage = (message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(""), 2800);
+  };
+
+  const handleLogout = () => {
+    clearSession();
+    navigate("/login");
   };
 
   const handleReportClick = (type: ReportType) => {
@@ -39,12 +47,12 @@ function CitizenHome() {
         </div>
 
         <div className="citizen-header__actions">
-          <span className="citizen-user">Juan Pérez</span>
+          <span className="citizen-user">{userName}</span>
 
           <button
             type="button"
             className="citizen-logout"
-            onClick={() => navigate("/login")}
+            onClick={handleLogout}
           >
             Cerrar sesión
           </button>
@@ -57,7 +65,7 @@ function CitizenHome() {
             <p className="citizen-eyebrow">Portal ciudadano</p>
 
             <h1>
-              Hola, <span>Juan Pérez</span>
+              Hola, <span>{userName}</span>
             </h1>
 
             <p>
