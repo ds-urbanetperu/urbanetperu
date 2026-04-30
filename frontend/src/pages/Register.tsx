@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { assets } from "../config/assets";
 import ImageSlot from "../components/common/ImageSlot";
+import { apiRequest } from "../utils/api";
+import { saveSession, type SessionUser } from "../utils/authStorage";
 
 function Register() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ function Register() {
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm({
@@ -23,7 +26,7 @@ function Register() {
     setError("");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.name || !form.email || !form.password || !form.confirmPassword) {
       setError("Completa todos los campos.");
       return;
@@ -44,7 +47,26 @@ function Register() {
       return;
     }
 
-    navigate("/login");
+    try {
+      setLoading(true);
+
+      const response = await apiRequest<{ user: SessionUser; token: string }>("/api/auth/register", {
+        method: "POST",
+        body: {
+          name: form.name,
+          email: form.email,
+          password: form.password
+        }
+      });
+
+      saveSession(response.token, response.user);
+      navigate("/inicio");
+    } catch (apiError) {
+      const message = apiError instanceof Error ? apiError.message : "No se pudo registrar el usuario.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -115,7 +137,7 @@ function Register() {
           {error && <p className="auth-error">{error}</p>}
 
           <button type="button" className="auth-submit" onClick={handleSubmit}>
-            Crear cuenta
+            {loading ? "Creando cuenta..." : "Crear cuenta"}
           </button>
 
           <button

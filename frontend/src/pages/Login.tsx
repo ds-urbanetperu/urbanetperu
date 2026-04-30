@@ -1,9 +1,42 @@
 import { assets } from "../config/assets";
 import ImageSlot from "../components/common/ImageSlot";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { apiRequest } from "../utils/api";
+import { saveSession, type SessionUser } from "../utils/authStorage";
 
 function Login() {
   const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError("Ingresa tu correo y contraseña.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await apiRequest<{ user: SessionUser; token: string }>("/api/auth/login", {
+        method: "POST",
+        body: { email, password }
+      });
+
+      saveSession(response.token, response.user);
+      navigate("/inicio");
+    } catch (apiError) {
+      const message = apiError instanceof Error ? apiError.message : "No se pudo iniciar sesión.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="login-page">
       <section
@@ -59,6 +92,8 @@ function Login() {
                 id="email"
                 type="email"
                 placeholder="ejemplo@correo.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
               />
             </div>
 
@@ -68,16 +103,20 @@ function Login() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
               />
             </div>
 
             <button
               type="button"
               className="login-submit"
-              onClick={() => navigate("/inicio")}
+              onClick={handleLogin}
             >
-              Ingresar al Sistema
+              {loading ? "Ingresando..." : "Ingresar al Sistema"}
             </button>
+
+            {error && <p className="auth-error">{error}</p>}
 
             <button
               type="button"
