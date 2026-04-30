@@ -10,6 +10,8 @@ import {
   type PotholeReport,
   type ReportCoords
 } from "../utils/reportStorage";
+import { apiRequest } from "../utils/api";
+import { getSessionUser, getToken } from "../utils/authStorage";
 
 type FormErrors = {
   image?: string;
@@ -23,6 +25,7 @@ function ReportPothole() {
   const [description, setDescription] = useState("");
   const [selectedPoint, setSelectedPoint] = useState<{ x: number; y: number } | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [submitting, setSubmitting] = useState(false);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -74,7 +77,7 @@ function ReportPothole() {
     }));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const newErrors: FormErrors = {};
@@ -89,6 +92,17 @@ function ReportPothole() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      return;
+    }
+
+    const token = getToken();
+    const user = getSessionUser();
+
+    if (!token || !user) {
+      setErrors((prev) => ({
+        ...prev,
+        image: "Tu sesión expiró. Inicia sesión nuevamente para registrar el reporte."
+      }));
       return;
     }
 
@@ -115,8 +129,36 @@ function ReportPothole() {
       createdAt: new Date().toISOString()
     };
 
-    setPendingReport(report);
-    navigate("/procesando");
+    try {
+      setSubmitting(true);
+
+      await apiRequest("/api/reports", {
+        method: "POST",
+        token,
+        body: {
+          title: "Bache reportado por ciudadano",
+          description: description || "Sin descripción",
+          location: report.address,
+          latitude: report.coords.lat,
+          longitude: report.coords.lng,
+          category: "bache",
+          priority: aiResult.severity === "Crítico" ? "alta" : "media",
+          images: [report.imageUrl],
+          userName: user.name,
+          userEmail: user.email
+        }
+      });
+
+      setPendingReport(report);
+      navigate("/procesando");
+    } catch (apiError) {
+      setErrors((prev) => ({
+        ...prev,
+        image: apiError instanceof Error ? apiError.message : "No se pudo registrar el reporte."
+      }));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -228,7 +270,7 @@ function ReportPothole() {
             )}
 
             <button type="submit" className="report-submit">
-              Enviar reporte
+              {submitting ? "Enviando..." : "Enviar reporte"}
             </button>
           </section>
         </form>
