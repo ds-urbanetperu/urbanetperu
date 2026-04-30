@@ -8,6 +8,7 @@ import {
   getStoredReports,
   type PotholeReport
 } from "../utils/reportStorage";
+import { clearSession, getSessionUser } from "../utils/authStorage";
 
 function formatShortDate(date: string) {
   return new Intl.DateTimeFormat("es-PE", {
@@ -19,9 +20,16 @@ function formatShortDate(date: string) {
 
 function MyReports() {
   const navigate = useNavigate();
+  const sessionUser = getSessionUser();
+  const userName = sessionUser?.name || "Usuario";
 
   const [reports, setReports] = useState<PotholeReport[]>([]);
   const [selectedReport, setSelectedReport] = useState<PotholeReport | null>(null);
+
+  const handleLogout = () => {
+    clearSession();
+    navigate("/login");
+  };
 
   useEffect(() => {
     const storedReports = getStoredReports();
@@ -45,9 +53,9 @@ function MyReports() {
         </div>
 
         <div className="my-reports-header__actions">
-          <span>Juan Pérez</span>
+          <span>{userName}</span>
 
-          <button type="button" onClick={() => navigate("/login")}>
+          <button type="button" onClick={handleLogout}>
             Cerrar sesión
           </button>
         </div>
