@@ -5,15 +5,8 @@ import GoogleLocationMap, {
   type GoogleMapPosition
 } from "../components/common/GoogleLocationMap";
 import { assets } from "../config/assets";
-import {
-  generateReportId,
-  getRandomSeverity,
-  setPendingReport,
-  type PotholeReport,
-  type ReportCoords
-} from "../utils/reportStorage";
-import { apiRequest } from "../utils/api";
 import { getSessionUser, getToken } from "../utils/authStorage";
+import { ReportFacade } from "../patterns/facades/ReportFacade";
 
 const DEFAULT_LOCATION: GoogleMapPosition = {
   lat: -12.046374,
@@ -149,54 +142,20 @@ function ReportPothole() {
       return;
     }
 
-    const aiResult = getRandomSeverity();
-
-    const coords: ReportCoords = {
-      x: 0,
-      y: 0,
-      lat: mapPosition.lat,
-      lng: mapPosition.lng
-    };
-
-    const locationText = `Lat: ${mapPosition.lat.toFixed(
-      6
-    )}, Lng: ${mapPosition.lng.toFixed(6)}`;
-
-    const report: PotholeReport = {
-      id: generateReportId(),
-      type: "Bache",
-      description,
-      imageUrl: imagePreview,
-      address: locationText,
-      distrito: "Ubicación detectada",
-      coords,
-      severity: aiResult.severity,
-      confidence: aiResult.confidence,
-      status: "Recibido",
-      createdAt: new Date().toISOString()
-    };
-
     try {
       setSubmitting(true);
 
-      await apiRequest("/api/reports", {
-        method: "POST",
+      await ReportFacade.createPotholeReport({
+        description,
+        imageUrl: imagePreview,
+        position: mapPosition,
         token,
-        body: {
-          title: "Bache reportado por ciudadano",
-          description: description || "Sin descripción",
-          location: report.address,
-          latitude: report.coords.lat,
-          longitude: report.coords.lng,
-          category: "bache",
-          priority: aiResult.severity === "Crítico" ? "alta" : "media",
-          images: [report.imageUrl],
-          userName: user.name,
-          userEmail: user.email
+        user: {
+          name: user.name,
+          email: user.email
         }
       });
 
-      setPendingReport(report);
       navigate("/procesando");
     } catch (apiError) {
       setErrors((prev) => ({
