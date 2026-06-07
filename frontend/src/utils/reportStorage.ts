@@ -26,11 +26,46 @@ export type PotholeReport = {
   confidence: number;
   status: ReportStatus;
   createdAt: string;
+  municipalNote?: string;
+  municipalNoteUpdatedAt?: string;
+  statusUpdatedAt?: string;
 };
 
 const REPORTS_KEY = "urbanet_reports";
 const PENDING_REPORT_KEY = "urbanet_pending_report";
 const LAST_REPORT_KEY = "urbanet_last_report";
+
+function readReport(key: string): PotholeReport | null {
+  const rawReport = localStorage.getItem(key);
+
+  if (!rawReport) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawReport) as PotholeReport;
+  } catch {
+    return null;
+  }
+}
+
+function syncSingleReportCache(report: PotholeReport) {
+  const lastReport = getLastReport();
+
+  if (lastReport?.id === report.id) {
+    localStorage.setItem(LAST_REPORT_KEY, JSON.stringify(report));
+  }
+
+  const pendingReport = getPendingReport();
+
+  if (pendingReport?.id === report.id) {
+    localStorage.setItem(PENDING_REPORT_KEY, JSON.stringify(report));
+  }
+}
+
+function persistReports(reports: PotholeReport[]) {
+  localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+}
 
 export function getStoredReports(): PotholeReport[] {
   const rawReports = localStorage.getItem(REPORTS_KEY);
@@ -50,7 +85,7 @@ export function saveReport(report: PotholeReport): PotholeReport[] {
   const reports = getStoredReports();
   const updatedReports = [report, ...reports];
 
-  localStorage.setItem(REPORTS_KEY, JSON.stringify(updatedReports));
+  persistReports(updatedReports);
   localStorage.setItem(LAST_REPORT_KEY, JSON.stringify(report));
   localStorage.removeItem(PENDING_REPORT_KEY);
 
@@ -62,31 +97,72 @@ export function setPendingReport(report: PotholeReport) {
 }
 
 export function getPendingReport(): PotholeReport | null {
-  const rawReport = localStorage.getItem(PENDING_REPORT_KEY);
-
-  if (!rawReport) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(rawReport) as PotholeReport;
-  } catch {
-    return null;
-  }
+  return readReport(PENDING_REPORT_KEY);
 }
 
 export function getLastReport(): PotholeReport | null {
-  const rawReport = localStorage.getItem(LAST_REPORT_KEY);
+  return readReport(LAST_REPORT_KEY);
+}
 
-  if (!rawReport) {
-    return null;
+export function updateReportStatus(
+  reportId: string,
+  status: ReportStatus
+): PotholeReport[] {
+  const reports = getStoredReports();
+  let updatedReport: PotholeReport | null = null;
+
+  const updatedReports = reports.map((report) => {
+    if (report.id !== reportId) {
+      return report;
+    }
+
+    updatedReport = {
+      ...report,
+      status,
+      statusUpdatedAt: new Date().toISOString()
+    };
+
+    return updatedReport;
+  });
+
+  persistReports(updatedReports);
+
+  if (updatedReport) {
+    syncSingleReportCache(updatedReport);
   }
 
-  try {
-    return JSON.parse(rawReport) as PotholeReport;
-  } catch {
-    return null;
+  return updatedReports;
+}
+
+export function addMunicipalNote(
+  reportId: string,
+  note: string
+): PotholeReport[] {
+  const reports = getStoredReports();
+  const normalizedNote = note.trim();
+  let updatedReport: PotholeReport | null = null;
+
+  const updatedReports = reports.map((report) => {
+    if (report.id !== reportId) {
+      return report;
+    }
+
+    updatedReport = {
+      ...report,
+      municipalNote: normalizedNote,
+      municipalNoteUpdatedAt: new Date().toISOString()
+    };
+
+    return updatedReport;
+  });
+
+  persistReports(updatedReports);
+
+  if (updatedReport) {
+    syncSingleReportCache(updatedReport);
   }
+
+  return updatedReports;
 }
 
 export function generateReportId() {

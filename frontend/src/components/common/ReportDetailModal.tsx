@@ -89,6 +89,18 @@ function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
                   "El ciudadano no proporcionó una descripción adicional para este reporte."}
               </p>
             </div>
+
+            {report.municipalNote && (
+              <div className="detail-municipal-note">
+                <span>Nota municipal</span>
+                <p>{report.municipalNote}</p>
+                {report.municipalNoteUpdatedAt && (
+                  <small>
+                    Actualizado: {formatDate(report.municipalNoteUpdatedAt)}
+                  </small>
+                )}
+              </div>
+            )}
           </section>
         </div>
 

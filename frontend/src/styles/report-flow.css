@@ -194,6 +194,40 @@
   font-size: 0.8rem;
 }
 
+.report-panel .form-group {
+  margin-top: 22px;
+}
+
+.report-panel .form-group textarea {
+  width: 100%;
+  min-height: 112px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  outline: none;
+  background: #101827;
+  color: var(--text-main);
+  padding: 13px 14px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.report-panel .form-group textarea::placeholder {
+  color: #7f95b2;
+  opacity: 1;
+}
+
+.report-panel .form-group textarea:focus {
+  border-color: rgba(56, 189, 248, 0.58);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+}
+
+.report-panel .form-group textarea:hover {
+  border-color: rgba(96, 165, 250, 0.42);
+}
+
 .location-button {
   width: 100%;
   min-height: 44px;
