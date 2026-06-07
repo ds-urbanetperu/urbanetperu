@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import ImageSlot from "../components/common/ImageSlot";
-import VisualMap from "../components/common/VisualMap";
+import GoogleLocationMap, {
+  type GoogleMapPosition
+} from "../components/common/GoogleLocationMap";
 import { assets } from "../config/assets";
 import {
   generateReportId,
@@ -13,6 +15,11 @@ import {
 import { apiRequest } from "../utils/api";
 import { getSessionUser, getToken } from "../utils/authStorage";
 
+const DEFAULT_LOCATION: GoogleMapPosition = {
+  lat: -12.046374,
+  lng: -77.042793
+};
+
 type FormErrors = {
   image?: string;
   location?: string;
@@ -23,11 +30,16 @@ function ReportPothole() {
 
   const [imagePreview, setImagePreview] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedPoint, setSelectedPoint] = useState<{ x: number; y: number } | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const [mapPosition, setMapPosition] =
+    useState<GoogleMapPosition>(DEFAULT_LOCATION);
+
+  const [locationStatus, setLocationStatus] = useState("");
+  const [hasSelectedLocation, setHasSelectedLocation] = useState(false);
+
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
     if (!file) {
@@ -48,6 +60,7 @@ function ReportPothole() {
 
     reader.onload = () => {
       setImagePreview(String(reader.result));
+
       setErrors((prev) => ({
         ...prev,
         image: undefined
@@ -57,8 +70,11 @@ function ReportPothole() {
     reader.readAsDataURL(file);
   };
 
-  const handleLocationSelect = (point: { x: number; y: number }) => {
-    setSelectedPoint(point);
+  const handleMapPositionChange = (position: GoogleMapPosition) => {
+    setMapPosition(position);
+    setHasSelectedLocation(true);
+    setLocationStatus("Ubicación seleccionada en el mapa.");
+
     setErrors((prev) => ({
       ...prev,
       location: undefined
@@ -66,18 +82,43 @@ function ReportPothole() {
   };
 
   const handleUseCurrentLocation = () => {
-    setSelectedPoint({
-      x: 45,
-      y: 52
-    });
+    if (!navigator.geolocation) {
+      setLocationStatus("Tu navegador no permite obtener la ubicación.");
+      return;
+    }
 
-    setErrors((prev) => ({
-      ...prev,
-      location: undefined
-    }));
+    setLocationStatus("Obteniendo tu ubicación actual...");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const realPosition: GoogleMapPosition = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+
+        setMapPosition(realPosition);
+        setHasSelectedLocation(true);
+        setLocationStatus("Ubicación actual detectada correctamente.");
+
+        setErrors((prev) => ({
+          ...prev,
+          location: undefined
+        }));
+      },
+      () => {
+        setLocationStatus(
+          "No se pudo obtener la ubicación. Verifica los permisos del navegador."
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const newErrors: FormErrors = {};
@@ -86,8 +127,9 @@ function ReportPothole() {
       newErrors.image = "La foto del bache es obligatoria.";
     }
 
-    if (!selectedPoint) {
-      newErrors.location = "Debes seleccionar la ubicación del bache.";
+    if (!hasSelectedLocation) {
+      newErrors.location =
+        "Debes seleccionar la ubicación del bache o usar tu ubicación actual.";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -101,7 +143,8 @@ function ReportPothole() {
     if (!token || !user) {
       setErrors((prev) => ({
         ...prev,
-        image: "Tu sesión expiró. Inicia sesión nuevamente para registrar el reporte."
+        image:
+          "Tu sesión expiró. Inicia sesión nuevamente para registrar el reporte."
       }));
       return;
     }
@@ -109,19 +152,23 @@ function ReportPothole() {
     const aiResult = getRandomSeverity();
 
     const coords: ReportCoords = {
-      x: selectedPoint!.x,
-      y: selectedPoint!.y,
-      lat: -12.1644 + selectedPoint!.y / 10000,
-      lng: -76.9631 + selectedPoint!.x / 10000
+      x: 0,
+      y: 0,
+      lat: mapPosition.lat,
+      lng: mapPosition.lng
     };
+
+    const locationText = `Lat: ${mapPosition.lat.toFixed(
+      6
+    )}, Lng: ${mapPosition.lng.toFixed(6)}`;
 
     const report: PotholeReport = {
       id: generateReportId(),
       type: "Bache",
       description,
       imageUrl: imagePreview,
-      address: "Av. Próceres 450, San Juan de Miraflores, Lima",
-      distrito: "San Juan de Miraflores",
+      address: locationText,
+      distrito: "Ubicación detectada",
       coords,
       severity: aiResult.severity,
       confidence: aiResult.confidence,
@@ -154,7 +201,10 @@ function ReportPothole() {
     } catch (apiError) {
       setErrors((prev) => ({
         ...prev,
-        image: apiError instanceof Error ? apiError.message : "No se pudo registrar el reporte."
+        image:
+          apiError instanceof Error
+            ? apiError.message
+            : "No se pudo registrar el reporte."
       }));
     } finally {
       setSubmitting(false);
@@ -180,6 +230,7 @@ function ReportPothole() {
               fallbackText="UP"
               className="report-header__logo"
             />
+
             <strong>
               Urbanet<span>Peru</span>
             </strong>
@@ -190,7 +241,9 @@ function ReportPothole() {
       <section className="report-content">
         <div className="report-title">
           <p className="report-eyebrow">Reporte ciudadano</p>
+
           <h1>Reportar bache</h1>
+
           <p>
             Adjunta una foto clara del problema y selecciona su ubicación para
             que la municipalidad pueda evaluarlo.
@@ -201,10 +254,16 @@ function ReportPothole() {
           <section className="report-panel">
             <div className="report-panel__heading">
               <h2>Evidencia del problema</h2>
-              <p>La imagen será usada para simular la clasificación automática.</p>
+              <p>
+                La imagen será usada para simular la clasificación automática.
+              </p>
             </div>
 
-            <label className={`photo-uploader ${errors.image ? "has-error" : ""}`}>
+            <label
+              className={`photo-uploader ${
+                errors.image ? "has-error" : ""
+              }`}
+            >
               <input
                 type="file"
                 accept="image/png, image/jpeg, image/jpg"
@@ -226,6 +285,7 @@ function ReportPothole() {
 
             <div className="form-group">
               <label htmlFor="description">Descripción opcional</label>
+
               <textarea
                 id="description"
                 maxLength={500}
@@ -234,6 +294,7 @@ function ReportPothole() {
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
               />
+
               <small className="character-counter">
                 {description.length}/500 caracteres
               </small>
@@ -243,7 +304,9 @@ function ReportPothole() {
           <section className="report-panel">
             <div className="report-panel__heading">
               <h2>Ubicación del bache</h2>
-              <p>Selecciona un punto en el mapa o usa una ubicación simulada.</p>
+              <p>
+                Selecciona un punto en el mapa o usa tu ubicación actual.
+              </p>
             </div>
 
             <button
@@ -254,22 +317,35 @@ function ReportPothole() {
               Usar mi ubicación actual
             </button>
 
-            <VisualMap
-              selectedPoint={selectedPoint}
-              onSelectPoint={handleLocationSelect}
-              height="370px"
+            <GoogleLocationMap
+              position={mapPosition}
+              onPositionChange={handleMapPositionChange}
             />
 
-            {errors.location && <p className="report-error">{errors.location}</p>}
+            {locationStatus && (
+              <p className="location-status">{locationStatus}</p>
+            )}
 
-            {selectedPoint && (
+            {errors.location && (
+              <p className="report-error">{errors.location}</p>
+            )}
+
+            {hasSelectedLocation && (
               <div className="detected-address">
-                <span>Dirección aproximada detectada</span>
-                <strong>Av. Próceres 450, San Juan de Miraflores, Lima</strong>
+                <span>Coordenadas detectadas</span>
+
+                <strong>
+                  Lat: {mapPosition.lat.toFixed(6)}, Lng:{" "}
+                  {mapPosition.lng.toFixed(6)}
+                </strong>
               </div>
             )}
 
-            <button type="submit" className="report-submit">
+            <button
+              type="submit"
+              className="report-submit"
+              disabled={submitting}
+            >
               {submitting ? "Enviando..." : "Enviar reporte"}
             </button>
           </section>
