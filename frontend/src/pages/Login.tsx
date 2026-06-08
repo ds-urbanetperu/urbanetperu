@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ImageSlot from "../components/common/ImageSlot";
 import { assets } from "../config/assets";
-import { apiRequest } from "../utils/api";
+import { ApiRequestError, apiRequest } from "../utils/api";
 import { saveSession, type SessionUser } from "../utils/authStorage";
+import {
+  clearMunicipalLoginAttempts,
+  getMunicipalLockMessage,
+  isMunicipalLoginLocked,
+  registerMunicipalFailedAttempt
+} from "../utils/loginAttemptStorage";
 
 type UserType = "vecino" | "municipal";
 
@@ -20,22 +26,45 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+
+  useEffect(() => {
+    if (selectedUserType === "municipal" && isMunicipalLoginLocked()) {
+      setIsLocked(true);
+      setError(getMunicipalLockMessage());
+      return;
+    }
+
+    setIsLocked(false);
+  }, [selectedUserType]);
 
   const handleUserTypeChange = (userType: UserType) => {
     setSelectedUserType(userType);
     setError("");
+    setIsLocked(userType === "municipal" && isMunicipalLoginLocked());
   };
 
   const handleMunicipalLogin = () => {
+    if (isMunicipalLoginLocked()) {
+      setIsLocked(true);
+      setError(getMunicipalLockMessage());
+      return;
+    }
+
     const normalizedEmail = email.trim().toLowerCase();
 
     if (
       normalizedEmail !== MUNICIPAL_CREDENTIALS.email ||
       password !== MUNICIPAL_CREDENTIALS.password
     ) {
-      setError("Credenciales municipales inválidas.");
+      const result = registerMunicipalFailedAttempt();
+      setError(result.message);
+      setIsLocked(result.locked);
       return;
     }
+
+    clearMunicipalLoginAttempts();
+    setIsLocked(false);
 
     const municipalUser: SessionUser = {
       id: "municipal-demo",
@@ -68,6 +97,10 @@ function Login() {
   };
 
   const handleLogin = async () => {
+    if (isLocked) {
+      return;
+    }
+
     if (!email.trim() || !password) {
       setError("Ingresa tu correo y contraseña.");
       return;
@@ -84,6 +117,12 @@ function Login() {
 
       await handleCitizenLogin();
     } catch (apiError) {
+      if (apiError instanceof ApiRequestError) {
+        setError(apiError.message);
+        setIsLocked(Boolean(apiError.locked));
+        return;
+      }
+
       const message =
         apiError instanceof Error
           ? apiError.message
@@ -176,6 +215,7 @@ function Login() {
                 }
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                disabled={isLocked || loading}
               />
             </div>
 
@@ -187,6 +227,7 @@ function Login() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                disabled={isLocked || loading}
               />
             </div>
 
@@ -194,16 +235,25 @@ function Login() {
               type="button"
               className="login-submit"
               onClick={handleLogin}
-              disabled={loading}
+              disabled={loading || isLocked}
             >
-              {loading
-                ? "Ingresando..."
-                : selectedUserType === "municipal"
-                  ? "Ingresar como Municipal"
-                  : "Ingresar al Sistema"}
+              {isLocked
+                ? "Acceso bloqueado temporalmente"
+                : loading
+                  ? "Ingresando..."
+                  : selectedUserType === "municipal"
+                    ? "Ingresar como Municipal"
+                    : "Ingresar al Sistema"}
             </button>
 
             {error && <p className="auth-error">{error}</p>}
+
+            {isLocked && (
+              <p className="auth-error">
+                Por seguridad, el acceso se habilitará automáticamente cuando
+                finalice el tiempo de bloqueo.
+              </p>
+            )}
 
             {selectedUserType === "vecino" && (
               <>
