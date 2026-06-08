@@ -46,6 +46,11 @@ export class PotholeReportBuilder {
     return this;
   }
 
+  setUserId(userId: string): PotholeReportBuilder {
+    this.report.userId = userId;
+    return this;
+  }
+
   build(): PotholeReport {
     if (!this.report.description && this.report.description !== "") {
       throw new Error("La descripción del reporte no fue definida.");
@@ -73,6 +78,10 @@ export class PotholeReportBuilder {
 
     if (this.report.confidence === undefined) {
       throw new Error("La confianza del análisis no fue definida.");
+    }
+
+    if (!this.report.userId) {
+      throw new Error("El usuario del reporte no fue definido.");
     }
 
     return this.report as PotholeReport;

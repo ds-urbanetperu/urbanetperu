@@ -9,6 +9,7 @@ export type GeoPosition = {
 };
 
 export type ReportUserData = {
+  id: string;
   name: string;
   email: string;
 };
