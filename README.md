@@ -35,6 +35,7 @@ Crea `frontend/.env` tomando como base `frontend/.env.example`:
 
 ```env
 VITE_API_URL=http://localhost:5001
+VITE_GOOGLE_MAPS_API_KEY=Coloca_tu_GOOGLE_MAPS_API_KEY
 ```
 
 ## Instalacion

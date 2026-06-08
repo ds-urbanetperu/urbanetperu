@@ -21,6 +21,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['vecino', 'municipal'],
     default: 'vecino'
+  },
+  failedLoginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lockUntil: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
