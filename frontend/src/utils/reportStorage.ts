@@ -16,6 +16,7 @@ export type ReportCoords = {
 
 export type PotholeReport = {
   id: string;
+  userId: string;
   type: "Bache";
   description: string;
   imageUrl: string;
@@ -79,6 +80,10 @@ export function getStoredReports(): PotholeReport[] {
   } catch {
     return [];
   }
+}
+
+export function getStoredReportsByUser(userId: string): PotholeReport[] {
+  return getStoredReports().filter((report) => report.userId === userId);
 }
 
 export function saveReport(report: PotholeReport): PotholeReport[] {

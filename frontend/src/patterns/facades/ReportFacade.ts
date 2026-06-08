@@ -33,6 +33,7 @@ export class ReportFacade {
     const locationText = ReportAdapter.toLocationText(position);
 
     const report = new PotholeReportBuilder()
+      .setUserId(user.id)
       .setDescription(description)
       .setImage(imageUrl)
       .setLocation(locationText, "Ubicación detectada", coords)
