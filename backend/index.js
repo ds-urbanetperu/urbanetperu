@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import authRoutes from './routes/auth.js';
 import reportRoutes from './routes/reports.js';
+import googleRoutes from './routes/google.js';
 
 dotenv.config();
 const app = express();
@@ -21,6 +22,7 @@ app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', googleRoutes);
 app.use('/api/reports', reportRoutes);
 
 app.get('/', (req, res) => {
