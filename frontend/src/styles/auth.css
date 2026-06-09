@@ -100,6 +100,13 @@
   color: var(--blue-soft);
 }
 
+.google-signin-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+}
+
 .auth-error {
   margin: -6px 0 0;
   padding: 10px 12px;
