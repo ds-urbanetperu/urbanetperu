@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { assets } from "../config/assets";
 import ImageSlot from "../components/common/ImageSlot";
+import { apiRequest } from "../utils/api";
 
 function ResetPassword() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
 
   const [form, setForm] = useState({
     password: "",
@@ -12,6 +15,7 @@ function ResetPassword() {
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm({
@@ -29,7 +33,12 @@ function ResetPassword() {
     return hasUppercase && hasLowercase && hasNumber;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!token) {
+      setError("El enlace de recuperación no es válido. Solicita uno nuevo.");
+      return;
+    }
+
     if (!form.password || !form.confirmPassword) {
       setError("Completa ambos campos.");
       return;
@@ -50,7 +59,28 @@ function ResetPassword() {
       return;
     }
 
-    navigate("/reset-password/success");
+    try {
+      setLoading(true);
+      setError("");
+
+      await apiRequest("/api/auth/reset-password", {
+        method: "POST",
+        body: {
+          token,
+          password: form.password
+        }
+      });
+
+      navigate("/reset-password/success");
+    } catch (apiError) {
+      const message =
+        apiError instanceof Error
+          ? apiError.message
+          : "No se pudo actualizar la contraseña.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -74,6 +104,13 @@ function ResetPassword() {
         </div>
 
         <form className="auth-form">
+          {!token && (
+            <p className="auth-error">
+              Este enlace no es válido. Solicita una nueva recuperación desde
+              inicio de sesión.
+            </p>
+          )}
+
           <div className="form-group">
             <label>Nueva contraseña</label>
             <input
@@ -82,6 +119,7 @@ function ResetPassword() {
               placeholder="••••••••"
               value={form.password}
               onChange={handleChange}
+              disabled={loading || !token}
             />
           </div>
 
@@ -93,19 +131,26 @@ function ResetPassword() {
               placeholder="••••••••"
               value={form.confirmPassword}
               onChange={handleChange}
+              disabled={loading || !token}
             />
           </div>
 
           {error && <p className="auth-error">{error}</p>}
 
-          <button type="button" className="auth-submit" onClick={handleSubmit}>
-            Actualizar contraseña
+          <button
+            type="button"
+            className="auth-submit"
+            onClick={handleSubmit}
+            disabled={loading || !token}
+          >
+            {loading ? "Actualizando..." : "Actualizar contraseña"}
           </button>
 
           <button
             type="button"
             className="auth-secondary"
             onClick={() => navigate("/login")}
+            disabled={loading}
           >
             Volver al inicio de sesión
           </button>

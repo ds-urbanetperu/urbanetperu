@@ -2,14 +2,16 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { assets } from "../config/assets";
 import ImageSlot from "../components/common/ImageSlot";
+import { apiRequest } from "../utils/api";
 
 function ForgotPassword() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!email) {
       setError("Ingresa tu correo electrónico.");
       return;
@@ -20,7 +22,25 @@ function ForgotPassword() {
       return;
     }
 
-    navigate("/forgot-password/sent");
+    try {
+      setLoading(true);
+      setError("");
+
+      await apiRequest("/api/auth/forgot-password", {
+        method: "POST",
+        body: { email }
+      });
+
+      navigate("/forgot-password/sent", { state: { email } });
+    } catch (apiError) {
+      const message =
+        apiError instanceof Error
+          ? apiError.message
+          : "No se pudo procesar la solicitud.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -57,19 +77,26 @@ function ForgotPassword() {
                 setEmail(event.target.value);
                 setError("");
               }}
+              disabled={loading}
             />
           </div>
 
           {error && <p className="auth-error">{error}</p>}
 
-          <button type="button" className="auth-submit" onClick={handleSubmit}>
-            Enviar instrucciones
+          <button
+            type="button"
+            className="auth-submit"
+            onClick={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? "Enviando..." : "Enviar instrucciones"}
           </button>
 
           <button
             type="button"
             className="auth-secondary"
             onClick={() => navigate("/login")}
+            disabled={loading}
           >
             Volver al inicio de sesión
           </button>
