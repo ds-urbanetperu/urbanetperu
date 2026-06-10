@@ -1,4 +1,7 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+// En desarrollo usamos rutas relativas: Vite reenvía /api al backend (mismo origen que Google OAuth).
+const API_BASE_URL = import.meta.env.DEV
+  ? ""
+  : import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 type RequestOptions = {
   method?: string;
