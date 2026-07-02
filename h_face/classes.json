@@ -1,0 +1,33 @@
+{
+  "project": "UrbanetMini",
+  "model_type": "YOLOv8 object detection",
+  "weights_file": "best.pt",
+  "input": "image",
+  "output": {
+    "severity": ["Leve", "Moderado", "Muy grave", "Pendiente"],
+    "confidence": "number between 0 and 1",
+    "label": "detected model label",
+    "detections": "number of valid detections"
+  },
+  "classes": {
+    "0": {
+      "label": "minor_pothole",
+      "severity": "Leve",
+      "priority_hint": "Baja"
+    },
+    "1": {
+      "label": "medium_pothole",
+      "severity": "Moderado",
+      "priority_hint": "Media"
+    },
+    "2": {
+      "label": "major_pothole",
+      "severity": "Muy grave",
+      "priority_hint": "Alta"
+    }
+  },
+  "notes": [
+    "La prioridad final no la decide el Space; la calcula UrbanetMini combinando gravedad, cantidad de reportes y ciudadanos estimados.",
+    "Si no se detecta bache, la gravedad enviada será Pendiente."
+  ]
+}
