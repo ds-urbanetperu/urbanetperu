@@ -112,3 +112,4 @@ Se comprobo lo siguiente durante la revision:
 
 - `docs/UrbanetPeru_SRS.md`: documento de requerimientos del sistema.
 - `docs/arquitectura-proyecto.md`: arquitectura del sistema, decisiones tecnicas y flujo de datos.
+- `docs/casos_ia` : documenta de casos de prueba de integración de IA.
