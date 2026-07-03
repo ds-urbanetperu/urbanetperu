@@ -5,7 +5,7 @@ import ReportDetailModal from "../components/common/ReportDetailModal";
 import SeverityBadge from "../components/common/SeverityBadge";
 import { assets } from "../config/assets";
 import {
-  getStoredReports,
+  getStoredReportsByUser,
   type PotholeReport
 } from "../utils/reportStorage";
 import { clearSession, getSessionUser } from "../utils/authStorage";
@@ -32,9 +32,14 @@ function MyReports() {
   };
 
   useEffect(() => {
-    const storedReports = getStoredReports();
-    setReports(storedReports);
-  }, []);
+    if (!sessionUser?.id) {
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    const userReports = getStoredReportsByUser(sessionUser.id);
+    setReports(userReports);
+  }, [navigate, sessionUser?.id]);
 
   return (
     <main className="my-reports-page">

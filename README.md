@@ -24,9 +24,13 @@ Crea `backend/.env` tomando como base `backend/.env.example`:
 
 ```env
 PORT=5001
-MONGO_URI=mongodb+srv://<usuario>:<password>@cluster.mongodb.net/urbanetperu?retryWrites=true&w=majority
+MONGO_URI=mongodb+srv://<usuario>:<password>@cluster.mongodb.net/urbanetperu?retryWrites=true&majority
 JWT_SECRET=una_clave_segura
 CLIENT_URL=http://localhost:5173
+GOOGLE_CLIENT_ID=tu_google_client_id
+GOOGLE_CLIENT_SECRET=tu_google_client_secret
+GMAIL_USER=tu_correo@gmail.com
+GMAIL_PASS=tu_app_password
 ```
 
 ### Frontend
@@ -35,6 +39,8 @@ Crea `frontend/.env` tomando como base `frontend/.env.example`:
 
 ```env
 VITE_API_URL=http://localhost:5001
+VITE_GOOGLE_MAPS_API_KEY=coloca_tu_google_maps_api_key
+VITE_GOOGLE_CLIENT_ID=coloca_tu_google_client_id
 ```
 
 ## Instalacion
@@ -106,3 +112,4 @@ Se comprobo lo siguiente durante la revision:
 
 - `docs/UrbanetPeru_SRS.md`: documento de requerimientos del sistema.
 - `docs/arquitectura-proyecto.md`: arquitectura del sistema, decisiones tecnicas y flujo de datos.
+- `docs/casos_ia` : documenta de casos de prueba de integración de IA.

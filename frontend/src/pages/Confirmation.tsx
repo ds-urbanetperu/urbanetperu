@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SeverityBadge from "../components/common/SeverityBadge";
-import VisualMap from "../components/common/VisualMap";
+import GoogleLocationMap from "../components/common/GoogleLocationMap";
 import {
   getLastReport,
   type PotholeReport
@@ -85,12 +85,12 @@ function Confirmation() {
           <section className="confirmation-media">
             <img src={report.imageUrl} alt="Evidencia del reporte" />
 
-            <VisualMap
-              readonly
-              selectedPoint={{
-                x: report.coords.x,
-                y: report.coords.y
+            <GoogleLocationMap
+              position={{
+                lat: report.coords.lat,
+                lng: report.coords.lng
               }}
+              readonly
               height="220px"
             />
           </section>

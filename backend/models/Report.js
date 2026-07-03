@@ -50,6 +50,15 @@ const reportSchema = new mongoose.Schema({
     type: String,
     enum: ['baja', 'media', 'alta'],
     default: 'media'
+  },
+  severity: {
+    type: String,
+    enum: ['Leve', 'Moderado', 'Crítico', 'No determinada'],
+    default: 'No determinada'
+  },
+  confidence: {
+    type: Number,
+    default: 0.0
   }
 }, {
   timestamps: true

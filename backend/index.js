@@ -1,18 +1,21 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import authRoutes from './routes/auth.js';
 import reportRoutes from './routes/reports.js';
+import googleRoutes from './routes/google.js';
+import passwordRoutes from './routes/password.js';
 
-dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 connectDB();
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
   'http://localhost:5173',
   'http://127.0.0.1:5173'
 ].filter(Boolean);
@@ -21,6 +24,8 @@ app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', googleRoutes);
+app.use('/api/auth', passwordRoutes);
 app.use('/api/reports', reportRoutes);
 
 app.get('/', (req, res) => {

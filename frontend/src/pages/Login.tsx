@@ -1,19 +1,107 @@
-import { assets } from "../config/assets";
-import ImageSlot from "../components/common/ImageSlot";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { apiRequest } from "../utils/api";
+import ImageSlot from "../components/common/ImageSlot";
+import { assets } from "../config/assets";
+import { ApiRequestError, apiRequest } from "../utils/api";
 import { saveSession, type SessionUser } from "../utils/authStorage";
+import {
+  clearMunicipalLoginAttempts,
+  getMunicipalLockMessage,
+  isMunicipalLoginLocked,
+  registerMunicipalFailedAttempt
+} from "../utils/loginAttemptStorage";
+
+type UserType = "vecino" | "municipal";
+
+const MUNICIPAL_CREDENTIALS = {
+  email: "municipal@urbanetperu.pe",
+  password: "municipal123"
+};
 
 function Login() {
   const navigate = useNavigate();
+
+  const [selectedUserType, setSelectedUserType] = useState<UserType>("vecino");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+
+  useEffect(() => {
+    if (selectedUserType === "municipal" && isMunicipalLoginLocked()) {
+      setIsLocked(true);
+      setError(getMunicipalLockMessage());
+      return;
+    }
+
+    setIsLocked(false);
+  }, [selectedUserType]);
+
+  const handleUserTypeChange = (userType: UserType) => {
+    setSelectedUserType(userType);
+    setError("");
+    setIsLocked(userType === "municipal" && isMunicipalLoginLocked());
+  };
+
+  const handleMunicipalLogin = () => {
+    if (isMunicipalLoginLocked()) {
+      setIsLocked(true);
+      setError(getMunicipalLockMessage());
+      return;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (
+      normalizedEmail !== MUNICIPAL_CREDENTIALS.email ||
+      password !== MUNICIPAL_CREDENTIALS.password
+    ) {
+      const result = registerMunicipalFailedAttempt();
+      setError(result.message);
+      setIsLocked(result.locked);
+      return;
+    }
+
+    clearMunicipalLoginAttempts();
+    setIsLocked(false);
+
+    const municipalUser: SessionUser = {
+      id: "municipal-demo",
+      name: "Municipalidad",
+      email: MUNICIPAL_CREDENTIALS.email,
+      role: "municipal"
+    };
+
+    saveSession("municipal-demo-token", municipalUser);
+    navigate("/municipal");
+  };
+
+  const handleCitizenLogin = async () => {
+    const response = await apiRequest<{ user: SessionUser; token: string }>(
+      "/api/auth/login",
+      {
+        method: "POST",
+        body: { email, password }
+      }
+    );
+
+    saveSession(response.token, response.user);
+
+    if (response.user.role === "municipal") {
+      navigate("/municipal");
+      return;
+    }
+
+    navigate("/inicio");
+  };
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (isLocked) {
+      return;
+    }
+
+    if (!email.trim() || !password) {
       setError("Ingresa tu correo y contraseña.");
       return;
     }
@@ -22,15 +110,24 @@ function Login() {
       setLoading(true);
       setError("");
 
-      const response = await apiRequest<{ user: SessionUser; token: string }>("/api/auth/login", {
-        method: "POST",
-        body: { email, password }
-      });
+      if (selectedUserType === "municipal") {
+        handleMunicipalLogin();
+        return;
+      }
 
-      saveSession(response.token, response.user);
-      navigate("/inicio");
+      await handleCitizenLogin();
     } catch (apiError) {
-      const message = apiError instanceof Error ? apiError.message : "No se pudo iniciar sesión.";
+      if (apiError instanceof ApiRequestError) {
+        setError(apiError.message);
+        setIsLocked(Boolean(apiError.locked));
+        return;
+      }
+
+      const message =
+        apiError instanceof Error
+          ? apiError.message
+          : "No se pudo iniciar sesión.";
+
       setError(message);
     } finally {
       setLoading(false);
@@ -73,27 +170,52 @@ function Login() {
             <p>Plataforma inteligente de reporte ciudadano</p>
           </div>
 
-          <form className="login-form">
+          <form className="login-form" onSubmit={(event) => event.preventDefault()}>
             <div className="form-group">
               <label>Tipo de usuario</label>
               <div className="user-type-selector">
-                <button type="button" className="is-active">
+                <button
+                  type="button"
+                  className={selectedUserType === "vecino" ? "is-active" : ""}
+                  onClick={() => handleUserTypeChange("vecino")}
+                >
                   Vecino
                 </button>
-                <button type="button">
+                <button
+                  type="button"
+                  className={selectedUserType === "municipal" ? "is-active" : ""}
+                  onClick={() => handleUserTypeChange("municipal")}
+                >
                   Municipal
                 </button>
               </div>
             </div>
+
+            {selectedUserType === "municipal" && (
+              <div className="municipal-demo-box">
+                <span>Acceso municipal de demostración</span>
+                <p>
+                  Correo: <strong>{MUNICIPAL_CREDENTIALS.email}</strong>
+                </p>
+                <p>
+                  Contraseña: <strong>{MUNICIPAL_CREDENTIALS.password}</strong>
+                </p>
+              </div>
+            )}
 
             <div className="form-group">
               <label htmlFor="email">Correo electrónico</label>
               <input
                 id="email"
                 type="email"
-                placeholder="ejemplo@correo.com"
+                placeholder={
+                  selectedUserType === "municipal"
+                    ? MUNICIPAL_CREDENTIALS.email
+                    : "ejemplo@correo.com"
+                }
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                disabled={isLocked || loading}
               />
             </div>
 
@@ -105,6 +227,7 @@ function Login() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                disabled={isLocked || loading}
               />
             </div>
 
@@ -112,35 +235,53 @@ function Login() {
               type="button"
               className="login-submit"
               onClick={handleLogin}
+              disabled={loading || isLocked}
             >
-              {loading ? "Ingresando..." : "Ingresar al Sistema"}
+              {isLocked
+                ? "Acceso bloqueado temporalmente"
+                : loading
+                  ? "Ingresando..."
+                  : selectedUserType === "municipal"
+                    ? "Ingresar como Municipal"
+                    : "Ingresar al Sistema"}
             </button>
 
             {error && <p className="auth-error">{error}</p>}
 
-            <button
-              type="button"
-              className="login-link"
-              onClick={() => navigate("/forgot-password")}
-            >
-              ¿Olvidaste tu contraseña?
-            </button>
+            {isLocked && (
+              <p className="auth-error">
+                Por seguridad, el acceso se habilitará automáticamente cuando
+                finalice el tiempo de bloqueo.
+              </p>
+            )}
 
-            <div className="login-divider">
-              <span></span>
-              <small>o</small>
-              <span></span>
-            </div>
+            {selectedUserType === "vecino" && (
+              <>
+                <button
+                  type="button"
+                  className="login-link"
+                  onClick={() => navigate("/forgot-password")}
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
 
-            <p className="register-text">
-              ¿No tienes cuenta?{" "}
-              <button
-                type="button"
-                onClick={() => navigate("/registro")}
-              >
-                Crea una nueva aquí
-              </button>
-            </p>
+                <div className="login-divider">
+                  <span></span>
+                  <small>o</small>
+                  <span></span>
+                </div>
+
+                <p className="register-text">
+                  ¿No tienes cuenta?{" "}
+                  <button
+                    type="button"
+                    onClick={() => navigate("/registro")}
+                  >
+                    Crea una nueva aquí
+                  </button>
+                </p>
+              </>
+            )}
           </form>
         </div>
       </section>

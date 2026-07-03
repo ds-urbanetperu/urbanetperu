@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { assets } from "../config/assets";
 import ImageSlot from "../components/common/ImageSlot";
+import GoogleSignInButton from "../components/common/GoogleSignInButton";
 import { apiRequest } from "../utils/api";
 import { saveSession, type SessionUser } from "../utils/authStorage";
 
@@ -68,6 +69,32 @@ function Register() {
       setLoading(false);
     }
   };
+
+  const handleGoogleCredential = useCallback(async (credential: string) => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await apiRequest<{ user: SessionUser; token: string }>(
+        "/api/auth/google",
+        {
+          method: "POST",
+          body: { credential }
+        }
+      );
+
+      saveSession(response.token, response.user);
+      navigate("/inicio");
+    } catch (apiError) {
+      const message =
+        apiError instanceof Error
+          ? apiError.message
+          : "No se pudo registrar con Google.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
 
   return (
     <main className="auth-page">
@@ -136,16 +163,14 @@ function Register() {
 
           {error && <p className="auth-error">{error}</p>}
 
-          <button type="button" className="auth-submit" onClick={handleSubmit}>
+          <button type="button" className="auth-submit" onClick={handleSubmit} disabled={loading}>
             {loading ? "Creando cuenta..." : "Crear cuenta"}
           </button>
 
-          <button
-            type="button"
-            className="auth-secondary"
-          >
-            Continuar con Google
-          </button>
+          <GoogleSignInButton
+            onCredential={handleGoogleCredential}
+            disabled={loading}
+          />
 
           <p className="auth-footer">
             ¿Ya tienes cuenta?{" "}

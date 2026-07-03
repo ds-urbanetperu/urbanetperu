@@ -1,5 +1,5 @@
 import SeverityBadge from "./SeverityBadge";
-import VisualMap from "./VisualMap";
+import GoogleLocationMap from "./GoogleLocationMap";
 import type { PotholeReport } from "../../utils/reportStorage";
 
 type ReportDetailModalProps = {
@@ -36,12 +36,12 @@ function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
           <section className="report-modal__media">
             <img src={report.imageUrl} alt="Evidencia del reporte" />
 
-            <VisualMap
-              readonly
-              selectedPoint={{
-                x: report.coords.x,
-                y: report.coords.y
+            <GoogleLocationMap
+              position={{
+                lat: report.coords.lat,
+                lng: report.coords.lng
               }}
+              readonly
               height="220px"
             />
           </section>
@@ -89,6 +89,18 @@ function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
                   "El ciudadano no proporcionó una descripción adicional para este reporte."}
               </p>
             </div>
+
+            {report.municipalNote && (
+              <div className="detail-municipal-note">
+                <span>Nota municipal</span>
+                <p>{report.municipalNote}</p>
+                {report.municipalNoteUpdatedAt && (
+                  <small>
+                    Actualizado: {formatDate(report.municipalNoteUpdatedAt)}
+                  </small>
+                )}
+              </div>
+            )}
           </section>
         </div>
 

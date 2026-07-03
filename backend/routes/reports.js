@@ -1,43 +1,29 @@
 import express from 'express';
-import Report from '../models/Report.js';
 import { verifyToken } from '../middleware/auth.js';
+import { ReportService } from '../patterns/facades/ReportService.js';
 
 const router = express.Router();
 
-// Crear un nuevo reporte
 router.post('/', verifyToken, async (req, res) => {
-  const { title, description, location, latitude, longitude, category, priority, images } = req.body;
-
-  if (!title || !description || !location) {
+  if (!req.body.title || !req.body.description || !req.body.location) {
     return res.status(400).json({ message: 'Título, descripción y ubicación son obligatorios' });
   }
 
   try {
-    const report = await Report.create({
-      userId: req.user.userId,
-      userName: req.body.userName,
-      userEmail: req.body.userEmail,
-      title,
-      description,
-      location,
-      latitude,
-      longitude,
-      category: category || 'bache',
-      priority: priority || 'media',
-      images: images || []
-    });
-
+    const report = await ReportService.createReport(req.body, req.user);
     res.status(201).json({ message: 'Reporte creado exitosamente', report });
   } catch (error) {
+    if (error.message.includes('obligatori')) {
+      return res.status(400).json({ message: error.message });
+    }
     console.error(error);
     res.status(500).json({ message: 'Error al crear el reporte' });
   }
 });
 
-// Obtener todos los reportes del usuario actual
 router.get('/user', verifyToken, async (req, res) => {
   try {
-    const reports = await Report.find({ userId: req.user.userId }).sort({ createdAt: -1 });
+    const reports = await ReportService.getReportsByUser(req.user.userId);
     res.json(reports);
   } catch (error) {
     console.error(error);
@@ -45,17 +31,9 @@ router.get('/user', verifyToken, async (req, res) => {
   }
 });
 
-// Obtener todos los reportes (para municipal)
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const { status, category, priority } = req.query;
-    const filter = {};
-
-    if (status) filter.status = status;
-    if (category) filter.category = category;
-    if (priority) filter.priority = priority;
-
-    const reports = await Report.find(filter).sort({ createdAt: -1 });
+    const reports = await ReportService.getAllReports(req.query);
     res.json(reports);
   } catch (error) {
     console.error(error);
@@ -63,10 +41,9 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
-// Obtener un reporte específico
 router.get('/:id', verifyToken, async (req, res) => {
   try {
-    const report = await Report.findById(req.params.id);
+    const report = await ReportService.getReportById(req.params.id);
     if (!report) {
       return res.status(404).json({ message: 'Reporte no encontrado' });
     }
@@ -77,21 +54,12 @@ router.get('/:id', verifyToken, async (req, res) => {
   }
 });
 
-// Actualizar estado del reporte
 router.put('/:id', verifyToken, async (req, res) => {
-  const { status, priority } = req.body;
-
   try {
-    const report = await Report.findByIdAndUpdate(
-      req.params.id,
-      { status, priority },
-      { new: true }
-    );
-
+    const report = await ReportService.updateReport(req.params.id, req.body);
     if (!report) {
       return res.status(404).json({ message: 'Reporte no encontrado' });
     }
-
     res.json({ message: 'Reporte actualizado', report });
   } catch (error) {
     console.error(error);
@@ -99,15 +67,12 @@ router.put('/:id', verifyToken, async (req, res) => {
   }
 });
 
-// Eliminar reporte
 router.delete('/:id', verifyToken, async (req, res) => {
   try {
-    const report = await Report.findByIdAndDelete(req.params.id);
-
-    if (!report) {
+    const deleted = await ReportService.deleteReport(req.params.id);
+    if (!deleted) {
       return res.status(404).json({ message: 'Reporte no encontrado' });
     }
-
     res.json({ message: 'Reporte eliminado' });
   } catch (error) {
     console.error(error);

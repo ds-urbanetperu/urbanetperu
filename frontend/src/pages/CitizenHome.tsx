@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { assets } from "../config/assets";
-import { REPORT_TYPES, type ReportType } from "../data/reportTypes";
 import ImageSlot from "../components/common/ImageSlot";
 import { clearSession, getSessionUser } from "../utils/authStorage";
 
@@ -19,15 +18,6 @@ function CitizenHome() {
   const handleLogout = () => {
     clearSession();
     navigate("/login");
-  };
-
-  const handleReportClick = (type: ReportType) => {
-    if (type.active) {
-      navigate("/reportar-baches");
-      return;
-    }
-
-    showMessage("Próximamente disponible. Esta funcionalidad estará activa en una siguiente versión.");
   };
 
   return (
@@ -73,85 +63,59 @@ function CitizenHome() {
               actúen con mayor eficacia. ¿Qué problema deseas reportar hoy?
             </p>
           </div>
-
-          <div className="citizen-hero__panel">
-            <span>Reporte ciudadano</span>
-            <strong>MVP Baches</strong>
-            <small>Versión inicial de UrbanetPeru</small>
-          </div>
         </section>
 
-        <section className="report-section">
-          <div className="section-heading">
-            <div>
-              <h2>Selecciona el tipo de reporte</h2>
+        <section className="pothole-dashboard">
+          <article className="pothole-action-card">
+            <div className="pothole-action-card__content">
+              <span className="pothole-action-card__eyebrow">Nuevo reporte</span>
+
+              <h2>Registrar bache en la vía pública</h2>
+
               <p>
-                Por ahora, solo el reporte de baches está disponible para el MVP.
+                Describe el problema, adjunta una imagen y selecciona la ubicación
+                aproximada del bache para facilitar su identificación.
+              </p>
+
+              <div className="pothole-action-card__steps">
+                <span>1. Describe el bache</span>
+                <span>2. Adjunta una imagen</span>
+                <span>3. Marca la ubicación</span>
+              </div>
+            </div>
+
+            <div className="pothole-action-card__actions">
+              <button
+                type="button"
+                className="pothole-primary-button"
+                onClick={() => navigate("/reportar-baches")}
+              >
+                Iniciar reporte de bache
+              </button>
+            </div>
+          </article>
+
+          <article className="pothole-history-card">
+            <div>
+              <span className="pothole-history-card__eyebrow">Historial</span>
+
+              <h2>Mis reportes registrados</h2>
+
+              <p>
+                Consulta los reportes enviados y revisa la información registrada
+                anteriormente.
               </p>
             </div>
-          </div>
 
-          <div className="report-grid">
-            {REPORT_TYPES.map((type) => {
-              const assetInfo = assets.reportTypes[type.iconKey];
-
-              return (
-                <article
-                  key={type.id}
-                  className={`report-card ${type.active ? "is-active" : "is-disabled"}`}
-                  onClick={() => handleReportClick(type)}
-                >
-                  <div className="report-card__background">
-                    <ImageSlot
-                      src={assetInfo?.background}
-                      alt=""
-                      fallbackText=""
-                      className="report-card__bg-image"
-                    />
-                    <div className="report-card__overlay" />
-                  </div>
-
-                  <div className="report-card__content">
-                    <div className="report-card__top">
-                      <ImageSlot
-                        src={assetInfo?.icon}
-                        alt={type.title}
-                        fallbackText={assetInfo?.fallback}
-                        className="report-card__icon"
-                      />
-
-                      {!type.active && (
-                        <span className="report-card__badge">
-                          Próximamente
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="report-card__body">
-                      <h3>{type.title}</h3>
-                      <p>{type.description}</p>
-                    </div>
-
-                    {type.active && (
-                      <button type="button" className="report-card__button">
-                        Iniciar reporte
-                      </button>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+            <button
+              type="button"
+              className="pothole-secondary-button"
+              onClick={() => navigate("/mis-reportes")}
+            >
+              Revisar historial
+            </button>
+          </article>
         </section>
-
-        <div className="citizen-history-link">
-          <button
-            type="button"
-            onClick={() => navigate("/mis-reportes")}
-          >
-            Revisar historial de mis reportes
-          </button>
-        </div>
       </section>
 
       {toast && (
