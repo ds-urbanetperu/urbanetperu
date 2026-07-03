@@ -51,6 +51,16 @@ export class ReportBuilder {
         return this;
     }
 
+    setSeverity(severity) {
+        this.report.severity = severity;
+        return this;
+    }
+
+    setConfidence(confidence) {
+        this.report.confidence = confidence;
+        return this;
+    }
+
     build() {
         if (!this.report.userId) throw new Error('El ID del usuario es obligatorio.');
         if (!this.report.userName) throw new Error('El nombre del usuario es obligatorio.');
