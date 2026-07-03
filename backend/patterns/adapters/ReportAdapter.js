@@ -11,7 +11,9 @@ export class ReportAdapter {
             longitude: reqBody.longitude,
             category: reqBody.category,
             priority: reqBody.priority,
-            images: reqBody.images
+            images: reqBody.images,
+            severity: reqBody.severity,
+            confidence: reqBody.confidence
         };
     }
 
@@ -29,6 +31,8 @@ export class ReportAdapter {
             status: reportDoc.status,
             priority: reportDoc.priority,
             images: reportDoc.images,
+            severity: reportDoc.severity,
+            confidence: reportDoc.confidence,
             createdAt: reportDoc.createdAt,
             updatedAt: reportDoc.updatedAt
         };
